@@ -1,0 +1,7 @@
+# Architecture Rules
+
+- Organize code by feature/module, not by technical layer folders only.
+- Keep dependencies directional and avoid circular imports.
+- Separate presentation, business logic, infrastructure, and integrations.
+- Prefer dependency injection for external services and repositories.
+- Record significant architecture decisions using ADR templates.

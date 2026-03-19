@@ -1,0 +1,94 @@
+name: Security Scan
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 4 * * 1"
+
+jobs:
+  dependency-review:
+    name: Dependency Review (PR)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Review dependencies changes
+        uses: actions/dependency-review-action@v4
+        with:
+          # Fails the check if a dependency introduced by the PR has high severity issues.
+          # Use TEMPLATES/security/security-exception-template.md for documented waivers.
+          fail-on-severity: high
+          # Keep it focused for an MVP baseline. Expand when your dependency coverage matures.
+          severity-threshold: high
+
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Dependency audit (override)
+        if: ${{ (vars.CI_DEP_AUDIT_COMMAND || '') != '' }}
+        shell: bash
+        run: ${{ vars.CI_DEP_AUDIT_COMMAND }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Node audit
+        if: ${{ (vars.CI_DEP_AUDIT_COMMAND || '') == '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -f package-lock.json ]; then
+            npm audit --audit-level=high
+          fi
+
+          if [ -f pnpm-lock.yaml ]; then
+            corepack enable
+            corepack prepare pnpm@latest --activate
+            pnpm audit --audit-level=high
+          fi
+
+          if [ -f yarn.lock ]; then
+            corepack enable
+            corepack prepare yarn@latest --activate
+            yarn npm audit --audit-level=high
+          fi
+
+      - name: Python audit
+        if: ${{ (vars.CI_DEP_AUDIT_COMMAND || '') == '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python -m pip install --upgrade pip
+          pip install pip-audit
+
+          if [ -f requirements.txt ]; then
+            pip-audit -r requirements.txt
+            exit 0
+          fi
+
+          # Support Poetry-driven projects by exporting requirements from poetry.lock.
+          if [ -f poetry.lock ] && [ -f pyproject.toml ]; then
+            pip install poetry
+            poetry export -f requirements.txt --without-hashes -o /tmp/requirements-export.txt
+            pip-audit -r /tmp/requirements-export.txt
+          fi

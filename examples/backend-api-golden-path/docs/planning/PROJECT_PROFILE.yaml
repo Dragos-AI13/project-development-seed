@@ -1,0 +1,19 @@
+project:
+  name: "vuln-scan-api"
+  type: "backend-api"
+  phase: "mvp"
+
+stack:
+  frontend: "n/a"
+  backend: "fastapi"
+  database: "postgresql"
+  cache: "redis"
+  queue: "celery"
+
+quality:
+  coverage_minimum_percent: 70
+  required_test_levels:
+    - unit
+    - integration
+  lint_required: true
+  security_scan_required: true

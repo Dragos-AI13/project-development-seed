@@ -1,0 +1,39 @@
+- name: bug
+  color: "d73a4a"
+  description: Something is not working
+- name: feature
+  color: "0e8a16"
+  description: New feature request
+- name: enhancement
+  color: "84b6eb"
+  description: Improvement to existing behavior
+- name: fix
+  color: "fbca04"
+  description: Bug fix implementation
+- name: security
+  color: "b60205"
+  description: Security related issue or change
+- name: dependencies
+  color: "0366d6"
+  description: Dependency updates
+- name: breaking
+  color: "5319e7"
+  description: Breaking change
+- name: chore
+  color: "cfd3d7"
+  description: Maintenance work
+- name: docs
+  color: "1d76db"
+  description: Documentation updates
+- name: test
+  color: "bfdadc"
+  description: Testing related work
+- name: priority:high
+  color: "b60205"
+  description: High priority
+- name: priority:medium
+  color: "fbca04"
+  description: Medium priority
+- name: priority:low
+  color: "0e8a16"
+  description: Low priority

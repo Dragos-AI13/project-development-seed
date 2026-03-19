@@ -1,0 +1,7 @@
+# Security Rules
+
+- Validate and sanitize every user-controlled input.
+- Never hardcode secrets; use environment variables or secure vaults.
+- Protect sensitive endpoints with authentication and authorization checks.
+- Do not log passwords, tokens, secrets, or personal sensitive data.
+- Enforce timeouts and resource limits for all long-running operations.

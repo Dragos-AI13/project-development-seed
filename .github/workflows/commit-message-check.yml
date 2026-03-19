@@ -1,0 +1,20 @@
+name: Commit Message Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  commitlint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate commit messages
+        uses: wagoid/commitlint-github-action@v6
+        with:
+          configFile: .commitlintrc.yml

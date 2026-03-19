@@ -1,0 +1,19 @@
+project:
+  name: "findings-dashboard-web"
+  type: "web-app"
+  phase: "mvp"
+
+stack:
+  frontend: "nextjs"
+  backend: "n/a"
+  database: "n/a"
+  cache: "n/a"
+  queue: "n/a"
+
+quality:
+  coverage_minimum_percent: 70
+  required_test_levels:
+    - unit
+    - integration
+  lint_required: true
+  security_scan_required: true

@@ -1,0 +1,7 @@
+# Documentation and ADR Rules
+
+- Keep README and setup instructions up to date.
+- Document public APIs with request/response examples.
+- Use ADRs for major technical decisions and trade-offs.
+- Document operational runbooks for incidents and recovery.
+- Remove dead documentation when code paths are removed.

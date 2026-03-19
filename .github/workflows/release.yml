@@ -1,0 +1,230 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-release:
+    name: Verify Release Readiness
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Detect stack files
+        id: lockfiles
+        shell: bash
+        run: |
+          # Minimal stack detection (optional defaults).
+          if [ -f go.mod ]; then
+            echo "has_go=true" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -f Cargo.toml ]; then
+            echo "has_rust=true" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -f pom.xml ] || [ -f build.gradle ] || [ -f build.gradle.kts ]; then
+            echo "has_java=true" >> "$GITHUB_OUTPUT"
+          fi
+          if compgen -G "*.csproj" > /dev/null || [ -f .sln ]; then
+            echo "has_dotnet=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate pre-release checklist (seed standard)
+        shell: pwsh
+        run: |
+          pwsh -File ./scripts/check-pre-release.ps1
+
+      - name: Optional CI setup command
+        if: ${{ (vars.CI_SETUP_COMMAND || '') != '' }}
+        shell: bash
+        run: ${{ vars.CI_SETUP_COMMAND }}
+
+      - name: Setup Go (optional)
+        if: ${{ (vars.CI_SETUP_COMMAND || '') == '' && (vars.CI_TEST_COMMAND || '') == '' && steps.lockfiles.outputs.has_go == 'true' }}
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Setup Rust (optional)
+        if: ${{ (vars.CI_SETUP_COMMAND || '') == '' && (vars.CI_TEST_COMMAND || '') == '' && steps.lockfiles.outputs.has_rust == 'true' }}
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Java (optional)
+        if: ${{ (vars.CI_SETUP_COMMAND || '') == '' && (vars.CI_TEST_COMMAND || '') == '' && steps.lockfiles.outputs.has_java == 'true' }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup .NET (optional)
+        if: ${{ (vars.CI_SETUP_COMMAND || '') == '' && (vars.CI_TEST_COMMAND || '') == '' && steps.lockfiles.outputs.has_dotnet == 'true' }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Run lint (Node)
+        if: ${{ (vars.CI_LINT_COMMAND || '') == '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f package.json ]; then
+            if npm run | grep -q " lint"; then
+              npm run lint
+            fi
+          fi
+
+      - name: Run lint (Python)
+        if: ${{ (vars.CI_LINT_COMMAND || '') == '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f pyproject.toml ]; then
+            python -m pip install --upgrade pip
+            python -m pip install ruff
+            python -m ruff check .
+          fi
+
+      - name: Run lint (override)
+        if: ${{ (vars.CI_LINT_COMMAND || '') != '' }}
+        shell: bash
+        run: ${{ vars.CI_LINT_COMMAND }}
+
+      - name: Run tests (Node)
+        if: ${{ (vars.CI_TEST_COMMAND || '') == '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f package.json ]; then
+            if npm run | grep -q " test"; then
+              npm test -- --ci
+            fi
+          fi
+
+      - name: Run tests (Python)
+        if: ${{ (vars.CI_TEST_COMMAND || '') == '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f pyproject.toml ] || [ -f requirements.txt ]; then
+            python -m pip install --upgrade pip
+            if [ -f requirements.txt ]; then
+              pip install -r requirements.txt
+            fi
+            pip install pytest
+            pytest -q
+          fi
+
+      - name: Run tests (override)
+        if: ${{ (vars.CI_TEST_COMMAND || '') != '' }}
+        shell: bash
+        run: ${{ vars.CI_TEST_COMMAND }}
+
+      - name: Run tests (Go default)
+        if: ${{ (vars.CI_TEST_COMMAND || '') == '' && steps.lockfiles.outputs.has_go == 'true' }}
+        shell: bash
+        run: |
+          go test ./...
+
+      - name: Run tests (Rust default)
+        if: ${{ (vars.CI_TEST_COMMAND || '') == '' && steps.lockfiles.outputs.has_rust == 'true' }}
+        shell: bash
+        run: |
+          cargo test --locked
+
+      - name: Run tests (Java default)
+        if: ${{ (vars.CI_TEST_COMMAND || '') == '' && steps.lockfiles.outputs.has_java == 'true' }}
+        shell: bash
+        run: |
+          if [ -f pom.xml ]; then
+            mvn -B test
+          elif [ -f gradlew ]; then
+            ./gradlew test
+          else
+            mvn -B test
+          fi
+
+      - name: Run tests (.NET default)
+        if: ${{ (vars.CI_TEST_COMMAND || '') == '' && steps.lockfiles.outputs.has_dotnet == 'true' }}
+        shell: bash
+        run: |
+          dotnet test --configuration Release
+
+      - name: Dependency audit (lightweight)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Framework-agnostic override for dependency/vulnerability checks.
+          if [ -n "${{ vars.CI_DEP_AUDIT_COMMAND }}" ]; then
+            eval "${{ vars.CI_DEP_AUDIT_COMMAND }}"
+            exit 0
+          fi
+
+          # Node: audit only when lockfiles exist.
+          if [ -f package-lock.json ]; then
+            npm audit --audit-level=high
+          fi
+
+          if [ -f pnpm-lock.yaml ]; then
+            corepack enable
+            corepack prepare pnpm@latest --activate
+            pnpm audit --audit-level=high
+          fi
+
+          if [ -f yarn.lock ]; then
+            corepack enable
+            corepack prepare yarn@latest --activate
+            yarn npm audit --audit-level=high
+          fi
+
+          # Python: pip-audit only when requirements can be determined.
+          python -m pip install --upgrade pip
+          pip install pip-audit
+
+          if [ -f requirements.txt ]; then
+            pip-audit -r requirements.txt
+          elif [ -f poetry.lock ] && [ -f pyproject.toml ]; then
+            pip install poetry
+            poetry export -f requirements.txt --without-hashes -o /tmp/requirements-export.txt
+            pip-audit -r /tmp/requirements-export.txt
+          fi
+
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  optional-deploy:
+    name: Deploy (optional, secret-gated)
+    runs-on: ubuntu-latest
+    needs: verify-release
+    if: ${{ secrets.DEPLOY_COMMAND != '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy via DEPLOY_COMMAND
+        shell: pwsh
+        run: |
+          pwsh -File ./scripts/deploy.ps1 -DeployCommand "${{ secrets.DEPLOY_COMMAND }}" -EnvironmentName "${{ github.event.release.tag_name }}"
+
+      - name: Post-deploy smoke test (optional)
+        shell: pwsh
+        run: |
+          pwsh -File ./scripts/smoke-test.ps1 -HealthUrl "${{ secrets.SMOKE_HEALTH_URL }}" -MetricsUrl "${{ secrets.SMOKE_METRICS_URL }}"
+

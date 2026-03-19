@@ -1,0 +1,6 @@
+# Observability Rules
+
+- Add structured logs with correlation IDs for critical flows.
+- Define metrics for throughput, errors, and latency.
+- Add or update alerts for production-impacting behavior changes.
+- Never log secrets or sensitive personal data.

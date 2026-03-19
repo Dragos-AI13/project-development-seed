@@ -1,0 +1,7 @@
+# Core Principles
+
+- Security First: prioritize secure defaults in all implementation choices.
+- Fail Secure: on failure, do not expose sensitive data or unsafe behavior.
+- Explicit over implicit: avoid hidden magic and unclear behavior.
+- KISS and YAGNI: build only what is needed now, in the simplest robust form.
+- SRP: each module/file/function should have a single clear responsibility.

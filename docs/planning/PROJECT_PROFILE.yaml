@@ -1,0 +1,44 @@
+project:
+  name: "replace-with-project-name"
+  type: "backend-api" # web-app | mobile-app | desktop-app | backend-api | fullstack-saas
+  phase: "mvp" # mvp | growth | scale
+
+stack:
+  frontend: "n/a"
+  backend: "fastapi"
+  database: "postgresql"
+  cache: "redis"
+  queue: "celery"
+
+quality:
+  coverage_minimum_percent: 70
+  required_test_levels:
+    - unit
+    - integration
+  lint_required: true
+  security_scan_required: true
+
+security:
+  auth_model: "jwt"
+  authorization_model: "rbac"
+  pii_handling: "minimal-collection"
+  encryption_in_transit: true
+  encryption_at_rest: true
+  rate_limiting_enabled: true
+
+operations:
+  environments:
+    - local
+    - staging
+    - production
+  release_cadence: "weekly"
+  rollback_strategy: "blue-green-or-fast-rollback"
+  observability:
+    logs: true
+    metrics: true
+    alerts: true
+
+constraints:
+  budget_notes: ""
+  deadline_notes: ""
+  legal_notes: ""

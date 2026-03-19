@@ -1,0 +1,150 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  quality:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Detect lockfiles
+        id: lockfiles
+        shell: bash
+        run: |
+          if [ -f package-lock.json ] || [ -f pnpm-lock.yaml ] || [ -f yarn.lock ]; then
+            echo "has_node=true" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -f requirements.txt ] || [ -f pyproject.toml ] || [ -f poetry.lock ]; then
+            echo "has_python=true" >> "$GITHUB_OUTPUT"
+          fi
+          # Minimal stack detection (optional defaults).
+          if [ -f go.mod ]; then
+            echo "has_go=true" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -f Cargo.toml ]; then
+            echo "has_rust=true" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -f pom.xml ] || [ -f build.gradle ] || [ -f build.gradle.kts ]; then
+            echo "has_java=true" >> "$GITHUB_OUTPUT"
+          fi
+          if compgen -G "*.csproj" > /dev/null || [ -f .sln ]; then
+            echo "has_dotnet=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install Node dependencies
+        if: steps.lockfiles.outputs.has_node == 'true'
+        shell: bash
+        run: |
+          if [ -f package-lock.json ]; then npm ci; fi
+          if [ -f pnpm-lock.yaml ]; then corepack enable && pnpm i --frozen-lockfile; fi
+          if [ -f yarn.lock ]; then corepack enable && yarn --frozen-lockfile; fi
+
+      - name: Install Python dependencies
+        if: steps.lockfiles.outputs.has_python == 'true'
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Optional CI setup command
+        if: ${{ (vars.CI_SETUP_COMMAND || '') != '' }}
+        shell: bash
+        run: ${{ vars.CI_SETUP_COMMAND }}
+
+      - name: Setup Go (optional)
+        if: ${{ (vars.CI_SETUP_COMMAND || '') == '' && (vars.CI_TEST_COMMAND || '') == '' && steps.lockfiles.outputs.has_go == 'true' }}
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Setup Rust (optional)
+        if: ${{ (vars.CI_SETUP_COMMAND || '') == '' && (vars.CI_TEST_COMMAND || '') == '' && steps.lockfiles.outputs.has_rust == 'true' }}
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Java (optional)
+        if: ${{ (vars.CI_SETUP_COMMAND || '') == '' && (vars.CI_TEST_COMMAND || '') == '' && steps.lockfiles.outputs.has_java == 'true' }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup .NET (optional)
+        if: ${{ (vars.CI_SETUP_COMMAND || '') == '' && (vars.CI_TEST_COMMAND || '') == '' && steps.lockfiles.outputs.has_dotnet == 'true' }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Run lint
+        if: ${{ (vars.CI_LINT_COMMAND || '') == '' }}
+        shell: bash
+        run: |
+          if [ -f package.json ] && npm run | grep -q " lint"; then npm run lint; fi
+          if [ -f pyproject.toml ]; then python -m ruff check .; fi
+
+      - name: Run lint (override)
+        if: ${{ (vars.CI_LINT_COMMAND || '') != '' }}
+        shell: bash
+        run: ${{ vars.CI_LINT_COMMAND }}
+
+      - name: Run tests
+        if: ${{ (vars.CI_TEST_COMMAND || '') == '' }}
+        shell: bash
+        run: |
+          if [ -f package.json ] && npm run | grep -q " test"; then npm test -- --ci; fi
+          if [ -f pyproject.toml ] || [ -f requirements.txt ]; then python -m pytest -q; fi
+
+      - name: Run tests (override)
+        if: ${{ (vars.CI_TEST_COMMAND || '') != '' }}
+        shell: bash
+        run: ${{ vars.CI_TEST_COMMAND }}
+
+      - name: Run tests (Go default)
+        if: ${{ (vars.CI_TEST_COMMAND || '') == '' && steps.lockfiles.outputs.has_go == 'true' }}
+        shell: bash
+        run: |
+          go test ./...
+
+      - name: Run tests (Rust default)
+        if: ${{ (vars.CI_TEST_COMMAND || '') == '' && steps.lockfiles.outputs.has_rust == 'true' }}
+        shell: bash
+        run: |
+          cargo test --locked
+
+      - name: Run tests (Java default)
+        if: ${{ (vars.CI_TEST_COMMAND || '') == '' && steps.lockfiles.outputs.has_java == 'true' }}
+        shell: bash
+        run: |
+          if [ -f pom.xml ]; then
+            mvn -B test
+          elif [ -f gradlew ]; then
+            ./gradlew test
+          else
+            mvn -B test
+          fi
+
+      - name: Run tests (.NET default)
+        if: ${{ (vars.CI_TEST_COMMAND || '') == '' && steps.lockfiles.outputs.has_dotnet == 'true' }}
+        shell: bash
+        run: |
+          if compgen -G "*.sln" > /dev/null; then
+            dotnet test --configuration Release
+          else
+            dotnet test --configuration Release
+          fi

@@ -1,0 +1,6 @@
+# API Contract Rules
+
+- Define or update API contracts before handler implementation.
+- Keep request/response and error code shape stable and explicit.
+- Document breaking changes and provide migration notes.
+- Add contract-focused tests for modified endpoints.

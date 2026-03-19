@@ -1,0 +1,29 @@
+---
+description: Hard-gate auto-evolve workflow for the seed itself
+alwaysApply: true
+---
+
+# Auto-Evolve Seed Rule (Hard Gate)
+
+- This rule governs changes to the seed framework, not product feature code.
+- Every seed change must map to at least one concrete gap discovered from:
+  - a real project bootstrap
+  - CI/security failures
+  - audit checklist results (`docs/audit/SEED_AUDIT_CHECKLIST.md`)
+- No generic process additions are allowed without executable enforcement:
+  - workflow check, validation script check, or template/checklist update
+- Any new doc must be connected in all three places:
+  - `docs/INDEX.md`
+  - `README.md` pack section
+  - `scripts/validate-seed.ps1` required files or reference checks
+- If a seed change alters behavior or policy, record the rationale in `DECISIONS/` (ADR).
+- Seed evolution must follow this order:
+  1. Identify gap and define expected outcome
+  2. Apply minimal file changes to close the gap
+  3. Update navigation and validation
+  4. Verify with script/lint checks
+  5. Document adoption impact (`docs/core/SEED_ADOPTION_GUIDE.md`)
+- Do not introduce parallel alternative standards for the same concern.
+- Prefer one canonical source per concern; remove or align conflicting guidance.
+- Backward compatibility rule: avoid breaking bootstrap defaults without migration notes.
+- Hard gate: if validation, CI consistency, or governance alignment is missing, the seed change is incomplete.

@@ -1,0 +1,19 @@
+# Environment Template
+
+# App
+APP_ENV=development
+APP_PORT=8000
+
+# Database
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=app_db
+DB_USER=app_user
+DB_PASSWORD=change_me
+
+# Security
+JWT_SECRET=change_me
+JWT_EXPIRES_MINUTES=60
+
+# External Services
+API_BASE_URL=https://api.example.com

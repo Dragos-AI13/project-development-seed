@@ -1,0 +1,7 @@
+# Git Workflow Rules
+
+- Use focused feature branches with one logical change per PR.
+- Write clear commit messages using `[module] short description`.
+- Keep PRs small and reviewable.
+- Block merges on lint/test/security gate failures.
+- Never commit `.env`, credentials, or generated secrets.

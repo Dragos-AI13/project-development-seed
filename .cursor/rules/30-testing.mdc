@@ -1,0 +1,7 @@
+# Testing Rules
+
+- Critical business logic must include unit tests.
+- Main user flows must include integration tests.
+- Add edge-case tests for parsing, validation, and authorization boundaries.
+- Keep tests deterministic and isolated from external services when possible.
+- Do not merge if required test suites fail.

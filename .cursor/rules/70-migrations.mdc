@@ -1,0 +1,6 @@
+# Migration Rules
+
+- Every schema change requires reviewed migration artifacts.
+- Destructive changes require backup and rollback strategy.
+- Prefer phased migrations for production safety.
+- Validate data integrity after migrations.
