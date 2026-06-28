@@ -73,7 +73,7 @@ jobs:
 
       - name: Setup .NET (optional)
         if: ${{ (vars.CI_SETUP_COMMAND || '') == '' && (vars.CI_TEST_COMMAND || '') == '' && steps.lockfiles.outputs.has_dotnet == 'true' }}
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '8.0.x'
 
