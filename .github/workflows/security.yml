@@ -41,7 +41,7 @@ jobs:
         run: ${{ vars.CI_DEP_AUDIT_COMMAND }}
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "20"
 
