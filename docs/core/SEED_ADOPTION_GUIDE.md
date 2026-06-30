@@ -45,3 +45,5 @@ Every exception must include owner, expiry date and rollback criteria.
 - Security impact reviewed
 - Observability impact reviewed (logs/metrics/alerts if applicable)
 - Documentation updated in the same change
+- **Regression check (Critic RUN 2)**: toate issue-urile din review-ul anterior sunt rezolvate
+- **ErrorBoundary placement** verificat conform `docs/standards/ERROR_BOUNDARY_PLACEMENT.md` (dacă e frontend)

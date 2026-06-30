@@ -40,6 +40,18 @@ For every implementation iteration, AI must provide:
 - risk notes and follow-up actions
 - explicit proposed updates for `docs/state/PROJECT_STATUS.md` and `docs/state/NEXT_ACTIONS.md`
 
+## Bug Flow: Investigația la Agentul Responsabil
+
+Când un bug este raportat:
+
+1. **Agentul responsabil** (cel care a implementat feature-ul) face prima investigație.
+2. **NU trimite direct la Commander** — agentul trebuie să înțeleagă ce n-a mers și să propună un fix.
+3. Dacă agentul nu găsește soluția în 2 încercări, atunci Critic intervine cu o investigație top-down.
+4. Critic documentează cauza reală în `docs/audit/*.md` și recomandă agentul care trebuie să aplice fix-ul.
+5. După fix, rulează Regression Check (Critic RUN 2) pentru a confirma că bug-ul e reparat și nu s-au introdus regresiuni.
+
+Regula de aur: **Agentul care a produs bug-ul îl investighează primul.** Asta creează feedback loop și previne recurența.
+
 ## Guardrails
 
 - Never bypass security controls for convenience.

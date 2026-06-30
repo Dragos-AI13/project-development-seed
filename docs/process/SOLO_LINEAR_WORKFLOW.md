@@ -29,6 +29,11 @@ This workflow enforces deterministic execution and minimizes context drift.
 - Run applicable tests.
 - Apply `docs/standards/QUALITY_GATES.md`.
 - Validate observability and release impact for production-facing changes.
+- **Regression Check (Critic RUN 2)**: După implementare, Critic rulează un al doilea review care verifică:
+  - Toate issue-urile din RUN 1 sunt rezolvate
+  - Bug-urile raportate anterior sunt confirmate reparate
+  - Nu s-au introdus regresiuni în zone adiacente
+  - Documentează rezultatul în `docs/state/QUALITY_TRENDS.md`
 
 ## Step 6: Document
 
